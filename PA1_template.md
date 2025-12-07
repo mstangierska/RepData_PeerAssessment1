@@ -26,31 +26,11 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
 
 ## Loading and preprocessing the data
 
-```{r install_packages, echo=F, results='hide', message=F, warning=F}
-## install dplyr if not already done so
-if (("dplyr" %in% (installed.packages())) == F) {
-        install.packages("dplyr")
-}
-## install stringr if not already done so
-if (("stringr" %in% (installed.packages())) == F) {
-        install.packages("stringr")
-}
-## install sqldf if not already done so
-if (("sqldf" %in% (installed.packages())) == F) {
-        install.packages("sqldf")
-}
-## install lubridate if not already done so
-if (("lubridate" %in% (installed.packages())) == F) {
-        install.packages("lubridate")
-}
-## install lattice if not already done so
-if (("lattice" %in% (installed.packages())) == F) {
-        install.packages("lattice")
-}
-```
+
 
 We're going to use libraries dplyr, stringr and sqldf for our data processing:
-```{r libraries, message=F, warning=F}
+
+```r
 library(dplyr)
 library(stringr)
 library(sqldf)
@@ -60,7 +40,8 @@ library(lattice)
 
 The following code downloads, unzips, and loads the data file into a data frame:
 
-```{r read_data}
+
+```r
 ## the name of the dataset file
 data_file <- "activity.csv"
 
@@ -83,6 +64,16 @@ rawdata <- read.csv(file = data_file, colClasses = c("integer", "Date", "charact
 head(rawdata)
 ```
 
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
+```
+
 When looking at the values of the column 'interval' we can observe that they are numerical with a certain pattern:
 ```
 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 100...
@@ -97,7 +88,8 @@ This lets us conclude that the values represent the time of the day:
 ```
 Following this pattern we can transform the values to datetime format:
 
-```{r add_interval_datetime_column}
+
+```r
 ## create a function that will transform an interval string into a datetime using '1970-01-01' as a dummy date,
 ## and the transformed time of the column interval
 interval_to_datetime <- function(interv) {
@@ -124,7 +116,8 @@ activity <- mutate(tbl_df(rawdata), interv_time = interval_to_datetime(interval)
 
 1. Calculate the total number of steps taken per day
 
-```{r calculate_total_steps_per_day}
+
+```r
 total_steps_by_day <- 
         activity %>%
         na.omit %>%
@@ -134,26 +127,31 @@ total_steps_by_day <-
 
 2. Make a histogram of the total number of steps taken each day
 
-```{r total_steps_by_day_histogram}
+
+```r
 hist(total_steps_by_day$steps, xlab = "Total Steps Per Day", ylab = "Number of Days", breaks = 10,
      main = "Frequency of Total Steps per Day")
 ```
 
+![plot of chunk total_steps_by_day_histogram](figure/total_steps_by_day_histogram-1.png) 
+
 3. Calculate and report the mean and median of the total number of steps taken per day
 
-```{r mean_and_median1}
+
+```r
 mean_steps <- format(mean(total_steps_by_day$steps), nsmall = 0)
 median_steps <- format(median(total_steps_by_day$steps), nsmall = 0)
 ```
 
-- The mean of the total number of steps taken per days is 'mean_steps' = `r mean_steps`.
-- The median of the total number of steps taken per days is 'median_steps' = `r median_steps`.
+- The mean of the total number of steps taken per days is 'mean_steps' = 10766.19.
+- The median of the total number of steps taken per days is 'median_steps' = 10765.
 
 ## What is the average daily activity pattern?
 
 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-```{r avg_steps_per_interval_plot}
+
+```r
 avg_steps_per_interval <- 
         activity %>% 
         na.omit %>%
@@ -164,28 +162,32 @@ plot(avg_steps_per_interval$interv_time, avg_steps_per_interval$avg_steps, type 
      xlab = "Interval", ylab = "Average Steps per Interval", main = "Average Daily Activity Pattern")
 ```
 
+![plot of chunk avg_steps_per_interval_plot](figure/avg_steps_per_interval_plot-1.png) 
+
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-```{r max_interval}
+
+```r
 interval_max_steps <- avg_steps_per_interval$interv_time[which.max(avg_steps_per_interval$avg_steps)]
 datetime_max_steps <- as.POSIXct(interval_max_steps, origin = "1970-01-01", tz = "GMT")
 datetime_max_steps <- strftime(datetime_max_steps, format="%H:%M", tz = "GMT")
 ```
 
-The 5-minute interval at 'datetime_max_steps' = `r datetime_max_steps` contains the maximum number of steps on average accross all the days in the dataset.
+The 5-minute interval at 'datetime_max_steps' = 08:35 contains the maximum number of steps on average accross all the days in the dataset.
 
 ## Imputing missing values
 
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
-```{r number_missing_values}
+
+```r
 ## check data for NA values
 na_steps <- sum(is.na(activity$steps))
 na_dates <- sum(is.na(activity$date))
 na_intervals <- sum(is.na(activity$interval))
 ```
 
-We have `r ifelse(na_steps == 0, 'no', na_steps)` NA values for steps, `r ifelse(na_dates == 0, 'no', na_dates)` NA values for dates, and `r ifelse(na_intervals == 0, 'no', na_intervals)` NA values for intervals.
+We have 2304 NA values for steps, no NA values for dates, and no NA values for intervals.
 
 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
@@ -195,7 +197,8 @@ The mean for the 5-minute interval across the other days where the data is hopef
 
 We're going to use the average steps data frame we calculate above to assign the steps values from that data frame to the steps where the value is NA
 
-```{r impute_missing_values, message=F, warning=F}
+
+```r
 activity_imp <- 
         sqldf('SELECT act.*, avg.avg_steps FROM "avg_steps_per_interval" as avg
               JOIN "activity" as act ON act.interv_time = avg.interv_time
@@ -207,7 +210,8 @@ activity_imp$avg_steps <- NULL
 
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
-```{r total_steps_by_day_histogram_imputed}
+
+```r
 ## Calculate the total number of steps taken per day from the data frame with imputed values
 total_steps_by_day <- 
         activity_imp %>%
@@ -218,15 +222,13 @@ hist(total_steps_by_day$steps, xlab = "Total Steps Per Day", ylab = "Number of D
      main = "Frequency of Total Steps per Day")
 ```
 
+![plot of chunk total_steps_by_day_histogram_imputed](figure/total_steps_by_day_histogram_imputed-1.png) 
+
 Calculate and report the mean and median total number of steps taken per day:
-```{r means_median2, echo=FALSE}
 
-mean_steps_imp <- format(mean(total_steps_by_day$steps), nsmall = 0)
-median_steps_imp <- format(median(total_steps_by_day$steps), nsmall = 0)
-```
 
-- The mean of the total number of steps taken per days is `r mean_steps_imp`.
-- The median of the total number of steps taken per days is `r median_steps_imp`.
+- The mean of the total number of steps taken per days is 10766.19.
+- The median of the total number of steps taken per days is 10766.19.
 
 The mean and median values are almost exactly equal as the values calculated before imputing missing values.
 The histogram shows higher step frequency counts. 
@@ -238,7 +240,8 @@ For this part the weekdays() function may be of some help here. Use the dataset 
 
 1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 
-```{r weekdays}
+
+```r
 weekdays <- function(x) {
         weekX <- ifelse(wday(x, label = T, abbr = T) %in% c("Sat", "Sun"), "weekend", "weekday")
         return(as.factor(weekX))
@@ -248,7 +251,8 @@ activity_imp$weekdays <- sapply(activity_imp$date, weekdays)
 
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 
-```{r avg_steps_per_interval_weekdays_plot}
+
+```r
 avg_steps_per_interval <- 
         activity_imp %>% 
         group_by(interv_time, weekdays) %>% 
@@ -257,6 +261,8 @@ avg_steps_per_interval <-
 xyplot(avg_steps ~ interv_time | weekdays, data = avg_steps_per_interval, type = 'l', layout = c(1, 2),
        xlab = "Interval", ylab = "Average Steps per Interval", main = "Average Daily Activity Pattern\nWeekday or Weekend")
 ```
+
+![plot of chunk avg_steps_per_interval_weekdays_plot](figure/avg_steps_per_interval_weekdays_plot-1.png) 
 
 
 
